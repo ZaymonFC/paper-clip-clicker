@@ -24,8 +24,22 @@ export class Game extends LitElement {
       transform: scale(0.95);
     }
 
+    p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
     .paperclip-container {
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .paperclip-main {
+      display: grid;
+      place-content: center;
+      min-height: 100vh;
     }
   `;
 

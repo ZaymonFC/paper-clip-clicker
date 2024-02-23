@@ -41,9 +41,6 @@ export class Game extends LitElement {
     }
   `;
 
-  override render() {
-    console.log('rendering damage number');
-    console.log(this.x, this.y);
-    return html`<span style="--x: ${this.x}px; --y: ${this.y}px;">+${this.value}</span>`;
-  }
+  override render = () =>
+    html`<span style="--x: ${this.x}px; --y: ${this.y}px;">+${this.value}</span>`;
 }
