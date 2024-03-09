@@ -11,17 +11,17 @@ export class Game extends LitElement {
     @keyframes frames {
       0% {
         opacity: 0;
-        transform: translateY(calc(-50% + 5px)) translateX(-50%);
+        transform: translate(-50%, calc(-50% + 5px));
       }
       40% {
         /* This marks the end of the fade-in and start of movement */
-        transform: translateY(-50%) translateX(-50%);
+        transform: translate(-50%, -50%);
         opacity: 1;
       }
       100% {
         /* Starts fading out immediately after reaching peak */
         opacity: 0;
-        transform: translateY(-50px) translateX(-50%);
+        transform: translate(-50%, -50px);
       }
     }
 

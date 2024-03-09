@@ -1,6 +1,15 @@
 import { Subject } from 'rxjs';
 import { atomWithStorage } from './lib/atomWithStorage';
 
+// --- Lib functions ----------------------------------------------------------
+// -- Scaling
+
+const GOLDEN_RATIO = 1.61803398875;
+
+function goldenRatio(n: number): number {
+  return n * GOLDEN_RATIO;
+}
+
 // --- Damage numbers ---
 type Position = { x: number; y: number };
 
@@ -10,22 +19,45 @@ interface DamageNumberInfo {
   id: number;
 }
 
+const techTree = {
+  efficiency: {
+    initialCost: 1,
+    costScaling: 'exponential',
+    powerScaling: 'golden-ratio',
+  },
+};
+
 type GameState = {
   paperclips: number;
   damageNumbers: DamageNumberInfo[];
   damageNumberId: number;
+  technology: {
+    efficiency: {
+      level: number;
+      power: number;
+      nextCost: number;
+    };
+  };
 };
 
 export const gameStateAtom = atomWithStorage<GameState>('game-state', {
   paperclips: 0,
   damageNumbers: [],
   damageNumberId: 0,
+  technology: {
+    efficiency: {
+      level: 0,
+      power: 1,
+      nextCost: techTree.efficiency.initialCost,
+    },
+  },
 });
 
 type GameAction =
   | { type: 'paperclip-clicked'; clickPosition: Position }
   | { type: 'add-damage-number'; value: number; clickPosition: Position }
-  | { type: 'clear-damage-number'; id: number };
+  | { type: 'clear-damage-number'; id: number }
+  | { type: 'buy-efficiency' };
 
 const bus$ = new Subject<GameAction>();
 
@@ -38,8 +70,13 @@ bus$.subscribe((action) => {
 
   switch (action.type) {
     case 'paperclip-clicked': {
-      gameStateAtom.set({ ...state, paperclips: state.paperclips + 1 });
-      gameDispatch({ type: 'add-damage-number', value: 1, clickPosition: action.clickPosition });
+      const { efficiency } = state.technology;
+      gameStateAtom.set({ ...state, paperclips: state.paperclips + efficiency.power });
+      gameDispatch({
+        type: 'add-damage-number',
+        value: efficiency.power,
+        clickPosition: action.clickPosition,
+      });
 
       break;
     }
@@ -69,6 +106,29 @@ bus$.subscribe((action) => {
       );
 
       gameStateAtom.set({ ...state, damageNumbers });
+      break;
+    }
+
+    case 'buy-efficiency': {
+      const { efficiency } = state.technology;
+      const cost = efficiency.nextCost;
+
+      if (state.paperclips >= cost) {
+        gameStateAtom.set({
+          ...state,
+          paperclips: state.paperclips - cost,
+          technology: {
+            ...state.technology,
+            efficiency: {
+              ...state.technology.efficiency,
+              level: efficiency.level + 1,
+              power: Math.ceil(goldenRatio(efficiency.power)),
+              nextCost: Math.ceil(efficiency.nextCost * 2),
+            },
+          },
+        });
+      }
+
       break;
     }
   }

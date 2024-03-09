@@ -4,6 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import { gameDispatch, gameStateAtom } from './state';
 import { react } from 'signia';
 import './damage-number';
+import './chunky-button';
 
 @customElement('paperclip-main')
 export class Game extends LitElement {
@@ -29,17 +30,32 @@ export class Game extends LitElement {
       font-size: 0.8rem;
     }
 
-    .paperclip-container {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
     .paperclip-main {
       display: grid;
       place-content: center;
       min-height: 100vh;
+    }
+
+    .paperclip-container {
+      position: relative;
+      width: fit-content;
+    }
+
+    .v-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .debug {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      max-width: 60vw;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      white-space: pre;
     }
   `;
 
@@ -49,39 +65,43 @@ export class Game extends LitElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
-    this.stopFn = react('game-state-reactor', () => {
-      this.state = gameStateAtom.value;
-    });
+    this.stopFn = react('game-state-reactor', () => (this.state = gameStateAtom.value));
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    if (this.stopFn) this.stopFn();
+    this.stopFn && this.stopFn();
   }
 
   override render() {
     return html`
       <div class="paperclip-main">
-        <div class="paperclip-container">
-          <img @click=${this.onClick} src="/images/paperclip.webp" alt="paperclip" />
+        <div class="v-stack">
+          <div class="paperclip-container">
+            <img @click=${this.onClick} src="/images/paperclip.webp" alt="paperclip" />
 
-          ${this.state.damageNumbers &&
-          this.state.damageNumbers.map((damageNumber) => {
-            const position = damageNumber.position;
-            return repeat(
+            ${repeat(
               this.state.damageNumbers,
               (damageNumber) => damageNumber.id,
-              (damageNumber) => html`
-                <damage-number
+              (damageNumber) => {
+                const position = damageNumber.position;
+                return html`<damage-number
                   .value=${damageNumber.value}
                   .x=${position.x}
                   .y=${position.y}
-                /></damage-number>
-              `
-            );
-          })}
+                ></damage-number>`;
+              }
+            )}
+          </div>
+          <p>Paperclips: ${this.state.paperclips}</p>
+          <chunky-button
+            @click=${() => gameDispatch({ type: 'buy-efficiency' })}
+            ?disabled=${this.state.paperclips < this.state.technology.efficiency.nextCost}
+            aria-label="Increase efficiency"
+            >Increase efficiency</chunky-button
+          >
         </div>
-        <p>Paperclips: ${this.state.paperclips}</p>
+        <code class="debug">${JSON.stringify(this.state, null, 2)}</code>
       </div>
     `;
   }
